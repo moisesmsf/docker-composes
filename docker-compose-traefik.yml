@@ -1,0 +1,38 @@
+version: "3.8"
+
+networks:
+  proxy-net:
+    driver: bridge
+    name: proxynet
+
+services:
+#Serviço de Proxy básico através do uso da solução Traefik
+  proxy:
+    image: "traefik:2.4"
+    container_name: "proxy-traefik"
+    hostname: "proxy"
+    restart: unless-stopped
+    networks:
+      - proxy-net
+    ports:
+      - "80:80"
+      - "443:443"
+    command:
+      - --global.sendanonymoususage=false
+      - --providers.docker=true
+      - --api.dashboard=true
+      - --log.level=DEBUG
+      - --global.checknewversion=false
+      - --providers.docker.endpoint=unix:///var/run/docker.sock
+      - --providers.docker.exposedByDefault=false
+      - --entryPoints.web.address=:80
+      - --entryPoints.websecure.address=:443
+    volumes:
+      - "/var/run/docker.sock:/var/run/docker.sock:ro"
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.dashboard.rule=Host(`traefik.example.com`)"
+      - "traefik.http.routers.dashboard.entrypoints=web"
+      - "traefik.http.routers.dashboard.service=api@internal"
+      - "traefik.http.routers.service=dashboard-lb"
+      - "traefik.http.services.dashboard-lb.loadbalancer.server.port=80"
