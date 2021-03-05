@@ -1,0 +1,43 @@
+version: "3.9"
+
+services:
+#  db-django:
+#    image: postgres
+#    container_name: db-django-lab
+#    restart: unless-stopped
+#    environment:
+#      - POSTGRES_DB=postgres
+#      - POSTGRES_USER=postgres
+#      - POSTGRES_PASSWORD=postgres
+    
+  django:
+    build: .
+    container_name: django-lab
+    restart: unless-stopped
+    command: python manage.py runserver 0.0.0.0:8000
+#    command: gunicorn configapp.wsgi:application --bind 0.0.0.0:8000
+    volumes:
+      - ./app:/home/teste/app
+    ports:
+      - "8000:8000"
+#    depends_on:
+#      - db-django
+
+#docker-compose run django django-admin startproject config-app .
+#docker-compose run djando python manage.py makemigrations
+#docker-compose run djando python manage.py migrate --noinput
+#docker-compose run djando python manage.py runserver 0.0.0.0:8000
+
+#No arquivo settings.py dentro do projeto do Django, alterar o dict DATABASES para o seguinte (usanbo DB PostgreSQL):
+#DATABSES = {
+#    'default': {
+#        'ENGINE': 'django.db.backends.postgresql',
+#        'NAME': 'postgres',
+#        'USER': 'postgres',
+#        'PASSWORD': 'postgres',
+#        'HOST': 'db-django',
+#        'PORT': 5432,
+#     }
+#}
+
+#No arquivo settings.py dentro do projeto do Django, ajustar a lista ALLOWED_HOSTS

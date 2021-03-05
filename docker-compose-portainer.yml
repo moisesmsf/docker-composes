@@ -1,0 +1,19 @@
+version: "3.8"
+
+services:
+
+  portainer:
+    image: portainer/portainer-ce
+    restart: unless-stopped
+    container_name: portainer-lab
+    networks:
+      - proxy-net
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ./portainer_data:/data
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.portainer-web.rule=Host(`portainer.example.com`)"
+      - "traefik.http.routers.portainer-web.entrypoints=web"
+      - "traefik.http.services.portainer-lb.loadbalancer.server.port=9000"
+      - "traefik.http.routers.portainer-web.service=portainer-lb"
