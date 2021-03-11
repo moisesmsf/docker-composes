@@ -1,0 +1,64 @@
+version: "3.8"
+
+services:
+
+  graylog:
+    image: graylog/graylog:4.0.3
+    container_name: graylog-graylog
+    restart: unless-stopped
+    depends_on:
+      - mongo-logs
+      - elasticsearch-logs
+    env_file: ./graylog/graylog.env
+    environment:
+      - GRAYLOG_HTTP_BIND_ADDRESS=0.0.0.0:9000
+      - GRAYLOG_HTTP_EXTERNAL_URI=http://logs.dominio/
+      - GRAYLOG_ROOT_TIMEZONE=America/Maceio
+      - GRAYLOG_ALLOW_HIGHLIGHTING=true
+      - "GRAYLOG_SERVER_JAVA_OPTS=-Xms1024m -Xmx2048m -XX:NewRatio=1 -XX:MaxMetaspaceSize=256m -server -XX:+ResizeTLAB -XX:+UseConcMar
+kSweepGC -XX:+CMSConcurrentMTEnabled -XX:+CMSClassUnloadingEnabled -XX:+UseParNewGC -XX:-OmitStackTraceInFastThrow"
+    ports:
+      - 514:514
+      - 514:514/udp
+      - 1540:1540/udp
+      - 12201:12201
+      - 12201:12201/udp
+    volumes:
+      - ./graylog/data/journal:/usr/share/graylog/data/journal
+      - ./graylog/data/server/GeoLite2-City.mmdb:/etc/graylog/server/GeoLite2-City.mmdb
+      - /etc/localtime:/etc/localtime:ro
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.graylog.rule=Host(`logs.dominio`)"
+      - "traefik.http.routers.graylog.entrypoints=web"
+      - "traefik.http.routers.graylog.service=graylog-lb"
+      - "traefik.http.services.graylog-lb.loadbalancer.server.port=9000"
+      - "traefik.http.routers.graylog.middlewares=graylog-header"
+      - "traefik.http.middlewares.graylog-header.headers.customrequestheaders.X-Graylog-Server-URL=http://logs.dominio/"
+      - "traefik.docker.network=traefik"
+
+  mongo-logs:
+    image: mongo:4.2
+    container_name: mongodb-graylog
+    restart: unless-stopped
+    volumes:
+      - ./mongodb/data/db:/data/db
+      - /etc/localtime:/etc/localtime:ro
+      
+  elasticsearch-logs:
+    image: docker.elastic.co/elasticsearch/elasticsearch-oss:7.10.2
+    container_name: elasticsearch-graylog
+    restart: unless-stopped
+    volumes:
+      - ./elasticsearch/data:/usr/share/elasticsearch/data
+      - /etc/localtime:/etc/localtime:ro
+    environment:
+      - http.host=0.0.0.0
+      - transport.host=localhost
+      - network.host=0.0.0.0
+      - bootstrap.memory_lock=true
+      - "ES_JAVA_OPTS=-Xms2g -Xmx2g"
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
